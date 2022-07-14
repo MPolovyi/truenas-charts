@@ -1,0 +1,7 @@
+image:
+  pullPolicy: IfNotPresent
+  repository: storjlabs/storagenode
+  tag: 6a69f0345-v1.57.5-go1.17.5
+identityCreationMountPath: "/.local/share/storj/identity/storagenode"
+runAsUser: 568
+runAsGroup: 568
