@@ -32,34 +32,20 @@ spec:
         runAsGroup: {{ .Values.runAsGroup }}
         fsGroup: {{ .Values.runAsGroup }}
       initContainers:
-      - name: generate-identity
+      - name: wait-for-identity
         image: "alpine/curl:latest"
         command: 
           - /bin/sh
           - -c
-          - 'cat ./readonly_init_script/init_config.sh > /init_script/init_config.sh && chmod +x /init_script/init_config.sh && cd /init_script && ./init_config.sh'
-        env:
-          {{ $envListIdentity := (default list) }}
-          {{ $envListIdentity = mustAppend $envListIdentity (dict "name" "DEFAULT_CERT_PATH" "value" (printf "%s/ca.cert" .Values.identityCreationMountPath)) }}
-          {{ $envListIdentity = mustAppend $envListIdentity (dict "name" "DEFAULT_IDENTITY_CERT_PATH" "value" (printf "%s/identity.cert" .Values.identityCreationMountPath)) }}
-          {{ $envListIdentity = mustAppend $envListIdentity (dict "name" "AUTH_KEY" "value" .Values.authToken) }}
-          {{ include "common.containers.environmentVariables" (dict "environmentVariables" $envListIdentity) | nindent 12 }}
-        volumeMounts:
-            - name: initial-scripts
-              mountPath: /readonly_init_script/
-            - name: identity
-              mountPath: {{ .Values.identityCreationMountPath }}
-            - name: temp-initial-script
-              mountPath: /init_script/
+          - 'while [ ! -f {{ .Values.appVolumeMounts.identity.mountPath }}/ca.cert -o ! -f {{ .Values.appVolumeMounts.identity.mountPath }}/identity.cert ]; do echo "waiting for identity to be generated"; sleep 30; done'
+        {{ include "common.storage.allContainerVolumeMounts" .Values | nindent 8 }}
       - name: setup
         {{ include "common.containers.imageConfig" .Values.image | nindent 8 }}
         command:
           - /bin/sh
           - -c
           - 'if test -f {{ .Values.appVolumeMounts.data.mountPath }}/config.yaml; then export SETUP="false";else export SETUP="true";fi;/entrypoint;'
-        volumeMounts: {{ include "common.storage.configureAppVolumeMountsInContainer" .Values | nindent 12 }}
-            - name: initial-scripts
-              mountPath: /init_script/
+          {{ include "common.storage.allContainerVolumeMounts" .Values | nindent 8 }}
 
       containers:
         - name: {{ .Chart.Name }}
@@ -96,6 +82,3 @@ spec:
           configMap:
             defaultMode: 0755
             name: "initial-scripts"
-        - name: temp-initial-script
-          emptyDir:
-            medium: "Memory"
