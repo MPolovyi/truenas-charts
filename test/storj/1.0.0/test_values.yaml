@@ -21,3 +21,5 @@ appVolumeMounts:
     mountPath: /app/identity
 authToken: "user:sasjkadkjhakdlaskdlkajsd"
 identityCreationMountPath: "/root/.local/share/storj/identity/storagenode"
+runAsUser: 568
+runAsGroup: 568
