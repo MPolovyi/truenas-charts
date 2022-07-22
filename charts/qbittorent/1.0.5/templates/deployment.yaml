@@ -29,6 +29,14 @@ spec:
     spec:
       hostNetwork: false
       containers:
+        - image: openvpn-client
+          name: openvpn-client
+          securityContext:
+            capabilities: {add: ['NET_ADMIN']}
+            privileged: true
+          dnsPolicy: 'None'
+          dnsConfig:
+            nameservers: ['1.1.1.1', '1.0.0.1']
         - name: {{ .Chart.Name }}
           {{ include "common.resources.limitaion" . | nindent 10 }}
           {{ include "common.containers.imageConfig" .Values.image | nindent 10 }}
